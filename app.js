@@ -230,11 +230,23 @@ function parseCSVAndBuildSchedule(csvText) {
     }
 
     // Extract Scoop Note (Column M = index 12, or fallback to 11/10)
-    const scoopVal = (cols[12] || cols[11] || cols[10] || '').trim();
-    if (scoopVal && scoopVal !== '💥' && !scoopVal.toUpperCase().includes('SCOOP')) {
-      if (!dayScoopsMap[currentDay]) dayScoopsMap[currentDay] = [];
-      if (!dayScoopsMap[currentDay].includes(scoopVal)) {
-        dayScoopsMap[currentDay].push(scoopVal);
+    const rawScoopVal = (cols[12] || cols[11] || cols[10] || '').trim();
+    
+    // Asterisk Display Rules:
+    // ** (double asterisk): Listed ONLY at Top-of-Day Scoop Banner, NOT on event card.
+    // *  (single asterisk): Listed in BOTH Top-of-Day Scoop Banner AND on event card.
+    //    (no asterisk):     Listed ONLY on event card, NOT in Top-of-Day banner.
+    const isDoubleAsterisk = rawScoopVal.startsWith('**');
+    const isSingleAsterisk = rawScoopVal.startsWith('*') && !isDoubleAsterisk;
+    const cleanScoopVal = rawScoopVal.replace(/^\*+\s*/, '').trim();
+
+    if (cleanScoopVal && cleanScoopVal !== '💥' && !cleanScoopVal.toUpperCase().includes('SCOOP')) {
+      // Include in Top-of-Day Banner if it has * or **
+      if (isSingleAsterisk || isDoubleAsterisk) {
+        if (!dayScoopsMap[currentDay]) dayScoopsMap[currentDay] = [];
+        if (!dayScoopsMap[currentDay].includes(cleanScoopVal)) {
+          dayScoopsMap[currentDay].push(cleanScoopVal);
+        }
       }
     }
 
@@ -266,13 +278,20 @@ function parseCSVAndBuildSchedule(csvText) {
         artists = artist1 || artist2 || '';
       }
 
+      // Extract Room / Location (Column J = index 9 "LOCAL")
       let location = (cols[9] || '').trim();
-      if (!location || /^[🎓🦄🏆🍄🍬🛟🥇🪄🎼]+$/.test(location)) {
-        location = (cols[8] || cols[7] || 'Main Stage').trim();
+
+      // Ensure location is a valid room and NOT a DJ/MC staff name
+      const isStaffOrDj = /^(DJ|DJs|MC|MCs)\s+/i.test(location) || location.toUpperCase().includes('DJ ');
+      if (!location || isStaffOrDj || /^[🎓🦄🏆🍄🍬🛟🥇🪄🎼]+$/.test(location)) {
+        location = 'Big Room'; // Default to main ballroom
       }
 
       if (location) roomsFound.add(location);
       daysFound.add(currentDay);
+
+      // Event Card Scoop: Displayed UNLESS it starts with double asterisk (**)
+      const eventCardScoop = isDoubleAsterisk ? '' : cleanScoopVal;
 
       sessions.push({
         id: `session_${rowIndex}`,
@@ -283,7 +302,8 @@ function parseCSVAndBuildSchedule(csvText) {
         format: format,
         artists: artists,
         location: location,
-        scoop: scoopVal,
+        scoop: eventCardScoop,
+        isTopDayScoop: (isSingleAsterisk || isDoubleAsterisk),
         rawCols: cols
       });
     }
@@ -302,9 +322,12 @@ function parseCSVAndBuildSchedule(csvText) {
     s.concurrentCount = timeSlotCounts[key];
   });
 
+  // Enforce explicitly requested primary room list and order
+  const PRIMARY_ROOMS = ['Big Room', 'Side Room', 'Small Room', 'Bliss Room'];
+
   state.parsedSessions = sessions;
   state.daysFound = Array.from(daysFound);
-  state.roomsFound = Array.from(roomsFound);
+  state.roomsFound = PRIMARY_ROOMS;
   state.dayScoops = dayScoopsMap;
   state.sponsorsFound = Array.from(sponsorsSet).map(s => {
     // Check if sponsor text is an image URL or formula
@@ -384,7 +407,7 @@ function updateDayTabsUI() {
 }
 
 function updateRoomFilterUI() {
-  let html = `<option value="ALL">All Rooms & Locations (${state.roomsFound.length})</option>`;
+  let html = `<option value="ALL">All Rooms & Locations</option>`;
   state.roomsFound.forEach(room => {
     html += `<option value="${escapeHtml(room)}" ${state.activeRoom === room ? 'selected' : ''}>${escapeHtml(room)}</option>`;
   });
@@ -430,7 +453,11 @@ function getFilteredSessions() {
     if (state.activeDay !== 'ALL' && s.day !== state.activeDay) return false;
 
     // Room Filter
-    if (state.activeRoom !== 'ALL' && s.location !== state.activeRoom) return false;
+    if (state.activeRoom !== 'ALL') {
+      const filterRoom = state.activeRoom.toLowerCase();
+      const sessionRoom = s.location.toLowerCase();
+      if (!sessionRoom.includes(filterRoom)) return false;
+    }
 
     // Category Filter
     if (state.activeCategory !== 'ALL') {
