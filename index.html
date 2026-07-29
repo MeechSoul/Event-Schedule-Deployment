@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATX ROX Schedule '26 | Live Event Schedule</title>
+  <meta name="description" content="Live updating event schedule for ATX ROX - A Magical West Coast Swing Weekend. Updated in real-time from Google Sheets.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-atx-rox">
+
+  <!-- TOP BRAND HERO BANNER -->
+  <header class="app-header">
+    <div class="header-overlay"></div>
+    <div class="header-container">
+      <div class="brand-badge">
+        <span class="pulse-dot"></span>
+        <span id="liveStatusText">LIVE GOOGLE SHEETS SYNC</span>
+      </div>
+      <h1 class="event-title" id="eventTitle">A MAGICAL WESTIE WEEKEND 🦄</h1>
+      <p class="event-subtitle" id="eventSubtitle">ATX ROX 2026 • AUSTIN, TX • SEPT 18-20, 2026</p>
+      
+      <!-- Live Sync Controls -->
+      <div class="sync-bar">
+        <div class="sync-info">
+          <i class="fa-solid fa-arrows-rotate sync-icon" id="syncSpinner"></i>
+          <span>Last Synced: <strong id="lastSyncTime">Just now</strong></span>
+          <span class="sync-interval">(Auto-updates every 60s)</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" id="btnSyncNow">
+            <i class="fa-solid fa-rotate"></i> Sync Now
+          </button>
+          <button class="btn btn-primary btn-sm" id="btnOpenEmbedModal">
+            <i class="fa-solid fa-code"></i> Embed on Website
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnOpenThemeDrawer">
+            <i class="fa-solid fa-palette"></i> Brand Kit
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="app-main">
+    
+    <!-- CONTROLS & NAVIGATION BAR -->
+    <section class="navigation-section">
+      <!-- Day Tabs Bar -->
+      <div class="tabs-scroll-container">
+        <div class="day-tabs" id="dayTabsContainer">
+          <!-- Dynamically populated day tabs -->
+          <button class="tab-btn active" data-day="ALL">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Full Schedule
+          </button>
+          <button class="tab-btn" data-day="FRIYAY">FRIYAY (Sept 18)</button>
+          <button class="tab-btn" data-day="SATURYAY">SATURYAY (Sept 19)</button>
+          <button class="tab-btn" data-day="SUNYAY">SUNYAY (Sept 20)</button>
+        </div>
+      </div>
+
+      <!-- Search, Filter & Layout Switcher Bar -->
+      <div class="toolbar">
+        <!-- Search Box -->
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="searchInput" placeholder="Search events, workshops, DJs, speakers..." aria-label="Search Schedule">
+          <button class="clear-search" id="btnClearSearch" title="Clear Search" style="display: none;">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Room / Track Filter Dropdown -->
+        <div class="filter-group">
+          <select id="roomFilter" class="select-input" aria-label="Filter by Location">
+            <option value="ALL">All Rooms & Locations</option>
+          </select>
+        </div>
+
+        <!-- View Mode Switcher -->
+        <div class="view-switcher" role="radiogroup" aria-label="Schedule View Options">
+          <button class="view-btn active" id="viewBtnAgenda" title="Agenda Cards View">
+            <i class="fa-solid fa-list-ul"></i>
+            <span>Agenda</span>
+          </button>
+          <button class="view-btn" id="viewBtnGrid" title="Google Sheet Grid View">
+            <i class="fa-solid fa-table-cells"></i>
+            <span>Sheet Grid</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Category Pills -->
+      <div class="category-pills" id="categoryPillsContainer">
+        <button class="pill-btn active" data-category="ALL">All Categories</button>
+        <button class="pill-btn" data-category="WCS">🎓 Workshops</button>
+        <button class="pill-btn" data-category="ALLSK8">🏆 Competitions</button>
+        <button class="pill-btn" data-category="FUN">🦄 Social Dancing</button>
+        <button class="pill-btn" data-category="LATE NITE">🍄 Late Night</button>
+        <button class="pill-btn" data-category="SHOW">✨ Shows & Routines</button>
+        <button class="pill-btn" data-category="POOL PARTY">🛟 Pool Party</button>
+        <button class="pill-btn" data-category="BLISS">🧘 Bliss & Wellness</button>
+      </div>
+    </section>
+
+    <!-- LOADING & ERROR STATES -->
+    <div class="state-container" id="loadingState">
+      <div class="spinner-large"></div>
+      <h3>Fetching Live Google Sheet Schedule...</h3>
+      <p>Parsing sessions, tracks, and live updates</p>
+    </div>
+
+    <div class="state-container hidden" id="errorState">
+      <i class="fa-solid fa-triangle-exclamation error-icon"></i>
+      <h3>Unable to load Google Sheet</h3>
+      <p id="errorMessage">Please check your internet connection or CSV publication link.</p>
+      <button class="btn btn-primary" id="btnRetry">Retry Connection</button>
+    </div>
+
+    <!-- SCHEDULE VIEWS CONTAINER -->
+    <section class="schedule-content">
+      
+      <!-- AGENDA LIST VIEW (DEFAULT MOBILE & DESKTOP) -->
+      <div class="view-container agenda-view" id="agendaView">
+        <div class="agenda-timeline" id="agendaTimeline">
+          <!-- Dynamically populated agenda timeline cards -->
+        </div>
+      </div>
+
+      <!-- GOOGLE SHEET GRID VIEW -->
+      <div class="view-container grid-view hidden" id="gridView">
+        <div class="grid-table-wrapper">
+          <table class="sheet-grid-table" id="sheetGridTable">
+            <thead id="gridTableHead">
+              <!-- Dynamically populated table headers -->
+            </thead>
+            <tbody id="gridTableBody">
+              <!-- Dynamically populated table rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- EMPTY SEARCH RESULTS STATE -->
+      <div class="state-container hidden" id="emptyState">
+        <i class="fa-solid fa-calendar-xmark empty-icon"></i>
+        <h3>No Events Found</h3>
+        <p>Try adjusting your search query or category filters.</p>
+        <button class="btn btn-secondary" id="btnResetFilters">Reset All Filters</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- EMBED CODE GENERATOR MODAL -->
+  <div class="modal-backdrop hidden" id="embedModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-code"></i> Website Embed Code Generator</h2>
+        <button class="modal-close" id="btnCloseEmbedModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>Copy and paste this code snippet directly into your WordPress, Squarespace, Wix, or custom website HTML page to display your live Google Sheet schedule!</p>
+        
+        <div class="form-group">
+          <label for="embedSheetUrl">Google Sheet CSV Published URL</label>
+          <input type="text" id="embedSheetUrl" class="text-input" readonly value="https://docs.google.com/spreadsheets/d/e/2PACX-1vRYBLvB4_05i_D7KHyR4v55tsRYfDS2PTN2zPRxjfxtT5gEfvuk1tuV2T-4HpYQgbgEz070Y7EDBnbz/pub?gid=1745454581&single=true&output=csv">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="embedHeight">Iframe Height</label>
+            <input type="text" id="embedHeight" class="text-input" value="850px">
+          </div>
+          <div class="form-group">
+            <label for="embedThemeSelect">Brand Theme Preset</label>
+            <select id="embedThemeSelect" class="select-input">
+              <option value="atx-rox">ATX ROX (Magical Westie)</option>
+              <option value="cyberpunk">Cyberpunk Dark</option>
+              <option value="minimalist">Minimalist Clean</option>
+              <option value="vibrant">Vibrant Sunset</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="code-preview-box">
+          <div class="code-header">
+            <span>HTML iFrame Embed Snippet</span>
+            <button class="btn btn-sm btn-secondary" id="btnCopyEmbed">
+              <i class="fa-regular fa-copy"></i> Copy Code
+            </button>
+          </div>
+          <textarea id="embedCodeTextarea" class="code-textarea" readonly rows="5"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnDoneEmbed">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAND KIT THEME CUSTOMIZER DRAWER -->
+  <aside class="drawer-backdrop hidden" id="themeDrawer">
+    <div class="drawer-panel">
+      <div class="drawer-header">
+        <h2><i class="fa-solid fa-palette"></i> Event Brand Kit Editor</h2>
+        <button class="drawer-close" id="btnCloseThemeDrawer"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="drawer-body">
+        <p class="drawer-desc">Customize the appearance of this schedule for your event website.</p>
+
+        <!-- Preset Selection -->
+        <div class="form-group">
+          <label>Theme Presets</label>
+          <div class="preset-grid">
+            <button class="preset-card active" data-preset="atx-rox">
+              <div class="preset-swatch" style="background: linear-gradient(135deg, #0d0b1a, #ff2a85, #00f0ff);"></div>
+              <span>ATX ROX Magic</span>
+            </button>
+            <button class="preset-card" data-preset="cyberpunk">
+              <div class="preset-swatch" style="background: linear-gradient(135deg, #05050a, #00ff66, #ff0055);"></div>
+              <span>Cyberpunk</span>
+            </button>
+            <button class="preset-card" data-preset="minimalist">
+              <div class="preset-swatch" style="background: linear-gradient(135deg, #ffffff, #2563eb, #0f172a);"></div>
+              <span>Minimalist</span>
+            </button>
+            <button class="preset-card" data-preset="vibrant">
+              <div class="preset-swatch" style="background: linear-gradient(135deg, #1e1b4b, #f59e0b, #ef4444);"></div>
+              <span>Sunset Gold</span>
+            </button>
+          </div>
+        </div>
+
+        <hr class="drawer-divider">
+
+        <!-- Custom Color Pickers -->
+        <h3>Custom Brand Colors</h3>
+        <div class="form-group">
+          <label for="colorPrimary">Primary Accent (Highlights & Buttons)</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="colorPrimary" value="#ff2a85">
+            <span id="hexPrimary">#ff2a85</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="colorSecondary">Secondary Accent (Badges & Glows)</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="colorSecondary" value="#00f0ff">
+            <span id="hexSecondary">#00f0ff</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="colorBackground">Background Base</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="colorBackground" value="#0d0b1a">
+            <span id="hexBackground">#0d0b1a</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="colorCard">Card Container Background</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="colorCard" value="#18152e">
+            <span id="hexCard">#18152e</span>
+          </div>
+        </div>
+
+        <hr class="drawer-divider">
+
+        <!-- Custom Titles -->
+        <h3>Event Headers</h3>
+        <div class="form-group">
+          <label for="customTitleInput">Event Title</label>
+          <input type="text" id="customTitleInput" class="text-input" value="A MAGICAL WESTIE WEEKEND 🦄">
+        </div>
+
+        <div class="form-group">
+          <label for="customSubtitleInput">Event Subtitle / Date</label>
+          <input type="text" id="customSubtitleInput" class="text-input" value="ATX ROX 2026 • AUSTIN, TX • SEPT 18-20, 2026">
+        </div>
+      </div>
+      <div class="drawer-footer">
+        <button class="btn btn-secondary" id="btnResetTheme">Reset Default</button>
+        <button class="btn btn-primary" id="btnApplyTheme">Save Theme Settings</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- EVENT DETAILS MODAL -->
+  <div class="modal-backdrop hidden" id="eventDetailModal">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <div class="modal-category-badge" id="modalCategoryBadge">WCS WORKSHOP</div>
+        <button class="modal-close" id="btnCloseEventDetailModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="eventDetailModalBody">
+        <!-- Dynamically injected event details -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btnAddToCalGoogle"><i class="fa-brands fa-google"></i> Add to Google Cal</button>
+        <button class="btn btn-primary" id="btnAddToCalIcs"><i class="fa-regular fa-calendar-plus"></i> Download .ICS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>© 2026 ATX ROX • Powered by Google Sheets Live Sync Generator</p>
+      <div class="footer-links">
+        <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vRYBLvB4_05i_D7KHyR4v55tsRYfDS2PTN2zPRxjfxtT5gEfvuk1tuV2T-4HpYQgbgEz070Y7EDBnbz/pub?gid=1745454581&single=true&output=csv" target="_blank" rel="noopener"><i class="fa-solid fa-file-csv"></i> Source Google Sheet CSV</a>
+        <span>•</span>
+        <a href="#" id="footerEmbedLink"><i class="fa-solid fa-code"></i> Embed Code</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Main JavaScript File -->
+  <script src="app.js"></script>
+</body>
+</html>
