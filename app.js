@@ -229,8 +229,8 @@ function parseCSVAndBuildSchedule(csvText) {
       sponsorsSet.add(sponsorVal);
     }
 
-    // Extract Scoop Note (Col 11 / index 11 or index 10)
-    const scoopVal = (cols[11] || cols[10] || '').trim();
+    // Extract Scoop Note (Column M = index 12, or fallback to 11/10)
+    const scoopVal = (cols[12] || cols[11] || cols[10] || '').trim();
     if (scoopVal && scoopVal !== '💥' && !scoopVal.toUpperCase().includes('SCOOP')) {
       if (!dayScoopsMap[currentDay]) dayScoopsMap[currentDay] = [];
       if (!dayScoopsMap[currentDay].includes(scoopVal)) {
