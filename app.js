@@ -1,6 +1,7 @@
 /**
  * ATX ROX & Custom Event Schedule Engine
- * Live Google Sheets Auto-Sync, Multi-Day Tabs, Dual Layouts, Brand Kit Customizer
+ * Live Google Sheets Auto-Sync, Multi-Day Tabs, Dual Layouts, Brand Kit Customizer,
+ * Scoop Announcements Banner & Dynamic Sponsor Showcase
  */
 
 // Global State
@@ -12,6 +13,8 @@ const CONFIG = {
 let state = {
   rawCsvData: null,
   parsedSessions: [], // Array of session objects
+  dayScoops: {},      // Map of day -> array of unique key scoop notes
+  sponsorsFound: [],  // Array of sponsor objects { name, logoUrl }
   daysFound: [],      // Array of day strings (e.g. ['FRIYAY', 'SATURYAY', 'SUNYAY'])
   roomsFound: [],     // Unique list of rooms/locations
   activeDay: 'ALL',   // 'ALL', 'FRIYAY', 'SATURYAY', etc.
@@ -68,6 +71,7 @@ function cacheDOMElements() {
   DOM.sheetGridTable = document.getElementById('sheetGridTable');
   DOM.gridTableHead = document.getElementById('gridTableHead');
   DOM.gridTableBody = document.getElementById('gridTableBody');
+  DOM.sponsorsContainer = document.getElementById('sponsorsContainer');
   
   DOM.loadingState = document.getElementById('loadingState');
   DOM.errorState = document.getElementById('errorState');
@@ -185,7 +189,7 @@ function updateSyncTimeDisplay() {
 }
 
 /* ==========================================================================
-   ROBUST CSV PARSER WITH CONCURRENT EVENT INHERITANCE
+   ROBUST CSV PARSER FOR CONCURRENT EVENTS, SCOOP & SPONSORS
    ========================================================================== */
 
 function parseCSVAndBuildSchedule(csvText) {
@@ -193,9 +197,11 @@ function parseCSVAndBuildSchedule(csvText) {
   const sessions = [];
   const daysFound = new Set();
   const roomsFound = new Set();
+  const dayScoopsMap = {};
+  const sponsorsSet = new Set();
 
   let currentDay = 'FRIYAY'; // Default initial day
-  let lastKnownTime = '';    // Track last seen time for concurrent sessions (e.g. 6:00 PM)
+  let lastKnownTime = '';    // Track last seen time for concurrent sessions
 
   lines.forEach((cols, rowIndex) => {
     if (!cols || cols.length < 3) return;
@@ -213,7 +219,23 @@ function parseCSVAndBuildSchedule(csvText) {
       currentDay = possibleDayMarker;
       lastKnownTime = ''; // Reset time on new day section
       daysFound.add(currentDay);
+      if (!dayScoopsMap[currentDay]) dayScoopsMap[currentDay] = [];
       return;
+    }
+
+    // Extract Sponsors from Column Q (index 16) or Column 15
+    const sponsorVal = (cols[16] || cols[15] || '').trim();
+    if (sponsorVal && !sponsorVal.toUpperCase().startsWith('SPONSOR') && !sponsorVal.toUpperCase().startsWith('THANK YOU')) {
+      sponsorsSet.add(sponsorVal);
+    }
+
+    // Extract Scoop Note (Col 11 / index 11 or index 10)
+    const scoopVal = (cols[11] || cols[10] || '').trim();
+    if (scoopVal && scoopVal !== '💥' && !scoopVal.toUpperCase().includes('SCOOP')) {
+      if (!dayScoopsMap[currentDay]) dayScoopsMap[currentDay] = [];
+      if (!dayScoopsMap[currentDay].includes(scoopVal)) {
+        dayScoopsMap[currentDay].push(scoopVal);
+      }
     }
 
     // Check time column
@@ -223,9 +245,8 @@ function parseCSVAndBuildSchedule(csvText) {
     let timeVal = '';
     if (isTimeFormat) {
       timeVal = rawTimeVal;
-      lastKnownTime = timeVal; // Record new time slot
+      lastKnownTime = timeVal;
     } else if (lastKnownTime) {
-      // Inherit the time from preceding concurrent event row!
       timeVal = lastKnownTime;
     }
 
@@ -236,7 +257,6 @@ function parseCSVAndBuildSchedule(csvText) {
       const icon = (cols[2] || cols[1] || '🦄').trim();
       const format = (cols[6] || cols[5] || 'EVENT').trim();
       
-      // Extract Staff / Artists
       const artist1 = (cols[7] || '').trim();
       const artist2 = (cols[8] || '').trim();
       let artists = '';
@@ -246,13 +266,10 @@ function parseCSVAndBuildSchedule(csvText) {
         artists = artist1 || artist2 || '';
       }
 
-      // Extract Room / Location (Col 9 "LOCAL" or fallback)
       let location = (cols[9] || '').trim();
       if (!location || /^[🎓🦄🏆🍄🍬🛟🥇🪄🎼]+$/.test(location)) {
         location = (cols[8] || cols[7] || 'Main Stage').trim();
       }
-
-      const scoop = (cols[11] || cols[10] || cols[12] || '').trim();
 
       if (location) roomsFound.add(location);
       daysFound.add(currentDay);
@@ -266,13 +283,13 @@ function parseCSVAndBuildSchedule(csvText) {
         format: format,
         artists: artists,
         location: location,
-        scoop: scoop,
+        scoop: scoopVal,
         rawCols: cols
       });
     }
   });
 
-  // Calculate Concurrent Event Counts per time slot
+  // Calculate Concurrent Event Counts
   const timeSlotCounts = {};
   sessions.forEach(s => {
     const key = `${s.day}_${s.time}`;
@@ -288,9 +305,16 @@ function parseCSVAndBuildSchedule(csvText) {
   state.parsedSessions = sessions;
   state.daysFound = Array.from(daysFound);
   state.roomsFound = Array.from(roomsFound);
+  state.dayScoops = dayScoopsMap;
+  state.sponsorsFound = Array.from(sponsorsSet).map(s => {
+    // Check if sponsor text is an image URL or formula
+    const isUrl = /^https?:\/\/.+\.(png|jpg|jpeg|svg|gif|webp)$/i.test(s);
+    return { name: s, logoUrl: isUrl ? s : null };
+  });
 
   updateDayTabsUI();
   updateRoomFilterUI();
+  renderSponsorsUI();
   renderCurrentView();
 }
 
@@ -333,7 +357,7 @@ function parseCSVRows(text) {
 }
 
 /* ==========================================================================
-   DYNAMIC UI RENDERING (AGENDA CARDS & SHEET GRID)
+   DYNAMIC UI RENDERING (AGENDA CARDS, SCOOP BANNERS & SPONSORS)
    ========================================================================== */
 
 function updateDayTabsUI() {
@@ -365,6 +389,39 @@ function updateRoomFilterUI() {
     html += `<option value="${escapeHtml(room)}" ${state.activeRoom === room ? 'selected' : ''}>${escapeHtml(room)}</option>`;
   });
   DOM.roomFilter.innerHTML = html;
+}
+
+function renderSponsorsUI() {
+  if (!DOM.sponsorsContainer) return;
+  if (state.sponsorsFound.length === 0) {
+    DOM.sponsorsContainer.classList.add('hidden');
+    return;
+  }
+
+  DOM.sponsorsContainer.classList.remove('hidden');
+  let html = `
+    <div class="sponsors-bar">
+      <div class="sponsors-header">
+        <i class="fa-solid fa-trophy"></i>
+        <span>THANK YOU TO OUR EVENT SPONSORS</span>
+      </div>
+      <div class="sponsors-grid">
+  `;
+
+  state.sponsorsFound.forEach(sp => {
+    if (sp.logoUrl) {
+      html += `<div class="sponsor-card sponsor-logo"><img src="${sp.logoUrl}" alt="${escapeHtml(sp.name)}" title="${escapeHtml(sp.name)}"></div>`;
+    } else {
+      html += `<div class="sponsor-card sponsor-badge"><i class="fa-solid fa-star"></i> ${escapeHtml(sp.name)}</div>`;
+    }
+  });
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  DOM.sponsorsContainer.innerHTML = html;
 }
 
 function getFilteredSessions() {
@@ -425,14 +482,14 @@ function renderCurrentView() {
   }
 }
 
-// Render Agenda List Timeline Cards with Concurrent Track Indicators
+// Render Agenda List Timeline Cards with Day Scoop Banners & Concurrent Indicators
 function renderAgendaTimeline(sessions) {
   let html = '';
   let lastGroupDay = null;
 
   sessions.forEach(session => {
-    // Inject Day Group Header if viewing Full Schedule
-    if (state.activeDay === 'ALL' && session.day !== lastGroupDay) {
+    // Inject Day Group Header & Daily Scoop Banner if day changes
+    if (session.day !== lastGroupDay) {
       lastGroupDay = session.day;
       let dayTitle = lastGroupDay;
       if (lastGroupDay === 'FRIYAY') dayTitle = '🎉 FRIYAY - DAY 1';
@@ -444,6 +501,22 @@ function renderAgendaTimeline(sessions) {
           <h2>${dayTitle}</h2>
         </div>
       `;
+
+      // Render Day Scoop Key Notes Announcement Box if notes exist for this day
+      const scoops = state.dayScoops[lastGroupDay] || [];
+      if (scoops.length > 0) {
+        html += `
+          <div class="day-scoop-banner">
+            <div class="day-scoop-title">
+              <i class="fa-solid fa-bullhorn"></i>
+              <span>${lastGroupDay} SCOOP & IMPORTANT NOTES</span>
+            </div>
+            <ul class="day-scoop-list">
+              ${scoops.map(sc => `<li><i class="fa-solid fa-lightbulb"></i> ${escapeHtml(sc)}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
     }
 
     // Generate Room Badge Color
@@ -472,9 +545,9 @@ function renderAgendaTimeline(sessions) {
               <i class="fa-solid fa-wand-magic-sparkles"></i> ${escapeHtml(session.artists)}
             </div>
           ` : ''}
-          ${session.scoop ? `
+          ${session.scoop && session.scoop !== '💥' ? `
             <div class="session-scoop">
-              💡 ${escapeHtml(session.scoop)}
+              💡 <strong>The Scoop:</strong> ${escapeHtml(session.scoop)}
             </div>
           ` : ''}
         </div>
@@ -504,7 +577,7 @@ function renderSheetGridTable(sessions) {
       <th>Format</th>
       <th>Artists / Staff</th>
       <th>Room / Location</th>
-      <th>The Scoop / Notes</th>
+      <th>The Scoop / Key Notes</th>
     </tr>
   `;
 
@@ -519,7 +592,7 @@ function renderSheetGridTable(sessions) {
         <td><span class="badge-format">${escapeHtml(s.format)}</span></td>
         <td style="color: var(--accent-gold);">${escapeHtml(s.artists || '-')}</td>
         <td><strong>${escapeHtml(s.location)}</strong></td>
-        <td style="color: var(--text-muted);">${escapeHtml(s.scoop || '-')}</td>
+        <td style="color: var(--text-muted);"><span class="grid-scoop-highlight">${escapeHtml(s.scoop || '-')}</span></td>
       </tr>
     `;
   });
@@ -547,10 +620,10 @@ function openEventDetailModal(session) {
     </div>
     ${session.artists ? `
       <p style="color: var(--accent-gold); font-weight: 600; margin-bottom: 0.75rem;">
-        <i class="fa-solid fa-star"></i> Featuring: ${escapeHtml(session.artists)}
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Featuring: ${escapeHtml(session.artists)}
       </p>
     ` : ''}
-    ${session.scoop ? `
+    ${session.scoop && session.scoop !== '💥' ? `
       <div style="background: rgba(0,0,0,0.3); border-left: 3px solid var(--primary-color); padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.9rem; color: var(--text-muted);">
         <strong>The Scoop:</strong> ${escapeHtml(session.scoop)}
       </div>
@@ -837,21 +910,21 @@ function initEventListeners() {
 function useFallbackScheduleData() {
   const fallbackCsv = `,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 ,,ATX ROX - 2026 SCHEDULE ,,,,,,,,,,,,,,,,,,,,,,,,,,
-,, FRIYAY,,,THE MAGIC,FORMAT,ARTISTS,ARTISTS,LOCAL,,,THE SCOOP
+,, FRIYAY,,,THE MAGIC,FORMAT,ARTISTS,ARTISTS,LOCAL,,,THE SCOOP,,,,SPONSORS!
 ,,🎓,3:00 PM,,Registration Desk Opens! ,Welcome!,RYAN & KELLY,,Foyer,🎓,,💥
-,,🎓,4:00 PM,,Ballroom Opens for Social Dancing!,FUN,DJ LIZ,,Big Room,🎓,,REGISTRATION OPENS 3PM
+,,🎓,4:00 PM,,Ballroom Opens for Social Dancing!,FUN,DJ LIZ,,Big Room,🎓,,REGISTRATION OPENS 3PM,,,,AWA
 ,,🎓,5:00 PM,,WCS: MAGIC MOMENTS (All Levels),WCS,THIBAULT & NICOLE,,Big Room,🎓,,FRIDAY CONTEST SIGN-UP DEADLINE
 ,,🎓,6:00 PM,,WCS: MAGIC MOVEMENT (All Levels),WCS,EMILY & SEBASTIAN,,Big Room,🎓,,FRIDAY 6:00PM
 ,,🎓,,,WCS: JACK & JILL PREP CLASS (Intermediate),WCS,GLENN BALL,,Side Room,🎓,,COMPS ARE IN THE BIG ROOM
-,,🎓,,,WCS: MAGIC SWITCHES (All Levels),WCS,SAM B. & VICTORIA,,Small Room,🎓,,Now on 2 Floors!
+,,🎓,,,WCS: MAGIC SWITCHES (All Levels),WCS,SAM B. & VICTORIA,,Small Room,🎓,,Now on 2 Floors!,,,,SWING CITY CHICAGO
 ,,🦄,7:00 PM,,Open Dancing!,FUN,DJ ANDRES,,Big Room,🦄,,💥
 ,,🏆,7:30 PM,,Allstar J&J (Prelims),ALLSK8,DJ RUBY ROX,MC Glenn,Big Room,🏆,,SIDE ROOM: PHOENIX NORTH
 ,,🏆,8:00 PM,,Novice J&J (Prelims - Floor 1),ALLSK8,DJ RUBY ROX,MC Glenn,Big Room,🏆,,SMALL ROOM: AUSTIN ROOM
-,,🍄,12:00 PM,,Late Night Magic -- KICKOFF!,LATE NITE,DJ RUBY ROX,,Big Room,🍄,,LATE NIGHT PARTY
+,,🍄,12:00 PM,,Late Night Magic -- KICKOFF!,LATE NITE,DJ RUBY ROX,,Big Room,🍄,,LATE NIGHT PARTY,,,,FLOORPLAY SWING VACATION
 ,, SATURYAY,,,THE MAGIC,FORMAT,ARTISTS,ARTISTS,LOCAL,,,THE SCOOP
 ,,🦄,9:00 AM,,BLISS: CACAO & INTENTION SETTING,BLISS,TALETHA RIVAS,,Bliss Room,🦄,,MORNING INTENTION
 ,,🎓,10:00 AM,,WCS: MAGIC GROOVES (All Levels),WCS,CHRIS & ALEXIS,,Big Room,🎓,,WORKSHOP
-,,🎓,11:00 AM,,WCS: MAGIC TIMELESS MOVES (All Levels),WCS,KP & BRYN,,Big Room,🎓,,ADVANCED MOVES
+,,🎓,11:00 AM,,WCS: MAGIC TIMELESS MOVES (All Levels),WCS,KP & BRYN,,Big Room,🎓,,ADVANCED MOVES,,,,WESTIE REMIX
 ,,🏆,1:15 PM,,ProAm Strictly - New/Nov, & Int,ALLSK8,DJ ANDRES,MC Tara,Big Room,🏆,,COMPETITIONS
 ,,🛟,6:00 PM,,POOL PARTY & Dinner Break!,POOL PARTY,DJ BREE,,Pool,🛟,,POOL PARTY
 ,,🦄,8:30 PM,,THE SHOW 1ST ACT: PRO AM ROUTINES,SHOW,DJ KOICHI,MC Sheven,Big Room,🦄,,PRO-AM SHOWCASE

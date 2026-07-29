@@ -974,3 +974,116 @@ body {
     align-items: stretch;
   }
 }
+
+/* --------------------------------------------------------------------------
+   11. DAY SCOOP BANNER & SPONSORS SHOWCASE
+   -------------------------------------------------------------------------- */
+.day-scoop-banner {
+  padding: 1rem 1.25rem;
+  background: rgba(0, 240, 255, 0.06);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: var(--radius-md);
+  margin-top: 0.5rem;
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(12px);
+}
+
+.day-scoop-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--secondary-color);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.day-scoop-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.day-scoop-list li {
+  font-size: 0.875rem;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.day-scoop-list li i {
+  color: var(--accent-gold);
+  font-size: 0.9rem;
+}
+
+.sponsors-section {
+  margin-top: 1.25rem;
+}
+
+.sponsors-bar {
+  padding: 1.25rem 1.5rem;
+  background: rgba(13, 11, 26, 0.6);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(16px);
+}
+
+.sponsors-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--accent-gold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.sponsors-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.sponsor-card {
+  padding: 0.4rem 0.9rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sponsor-card:hover {
+  background: rgba(255, 42, 133, 0.15);
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.sponsor-card i {
+  color: var(--accent-gold);
+}
+
+.sponsor-card img {
+  max-height: 28px;
+  object-fit: contain;
+}
+
+.grid-scoop-highlight {
+  background: rgba(255, 215, 0, 0.08);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  border-left: 2px solid var(--accent-gold);
+}
