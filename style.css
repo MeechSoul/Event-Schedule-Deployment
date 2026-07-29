@@ -22,6 +22,12 @@
   --secondary-glow: rgba(0, 240, 255, 0.25);
   --accent-gold: #ffd700;
 
+  /* Color-Coded Day Tokens */
+  --day1-color: #a855f7; /* Magical Purple for Friday */
+  --day2-color: #00f0ff; /* Electric Cyan / Turquoise for Saturday */
+  --day3-color: #ff2a85; /* Vibrant Pink for Sunday */
+  --day4-color: #ffd700; /* Warm Gold for Day 4+ */
+
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --text-dim: #64748b;
@@ -281,10 +287,17 @@ body {
 }
 
 .navigation-section {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   margin-bottom: 2rem;
+  padding: 0.75rem 0;
+  background: rgba(13, 11, 26, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--card-border);
 }
 
 /* Day Tabs Bar */
@@ -325,13 +338,44 @@ body {
 
 .tab-btn:hover {
   color: var(--text-main);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .tab-btn.active {
   background: var(--primary-color);
   color: #ffffff;
   box-shadow: 0 4px 16px var(--primary-glow);
+}
+
+/* Color-Coded Day Tabs */
+.tab-btn[data-day="FRIYAY"].active,
+.tab-btn[data-day="FRIDAY"].active,
+.tab-btn[data-day-code="day1"].active {
+  background: var(--day1-color);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.4);
+}
+
+.tab-btn[data-day="SATURYAY"].active,
+.tab-btn[data-day="SATURDAY"].active,
+.tab-btn[data-day-code="day2"].active {
+  background: var(--day2-color);
+  color: #0d0b1a;
+  box-shadow: 0 4px 16px rgba(0, 240, 255, 0.4);
+}
+
+.tab-btn[data-day="SUNYAY"].active,
+.tab-btn[data-day="SUNDAY"].active,
+.tab-btn[data-day-code="day3"].active {
+  background: var(--day3-color);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(255, 42, 133, 0.4);
+}
+
+.tab-btn[data-day-code="day4"].active {
+  background: var(--day4-color);
+  color: #0d0b1a;
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
 }
 
 /* Toolbar: Search, Filters & View Toggle */
@@ -480,10 +524,38 @@ body {
 .day-header-banner {
   padding: 1rem 1.5rem;
   background: linear-gradient(90deg, rgba(255, 42, 133, 0.15) 0%, transparent 100%);
-  border-left: 4px solid var(--primary-color);
+  border-left: 6px solid var(--primary-color);
   border-radius: var(--radius-md);
   margin-top: 1rem;
   margin-bottom: 0.5rem;
+  scroll-margin-top: 180px; /* Offset for smooth scroll positioning */
+}
+
+/* Color-Coded Day Banners */
+.day-header-banner[data-day="FRIYAY"],
+.day-header-banner[data-day="FRIDAY"],
+.day-header-banner[data-day-code="day1"] {
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.22) 0%, transparent 100%);
+  border-left: 6px solid var(--day1-color);
+}
+
+.day-header-banner[data-day="SATURYAY"],
+.day-header-banner[data-day="SATURDAY"],
+.day-header-banner[data-day-code="day2"] {
+  background: linear-gradient(90deg, rgba(0, 240, 255, 0.22) 0%, transparent 100%);
+  border-left: 6px solid var(--day2-color);
+}
+
+.day-header-banner[data-day="SUNYAY"],
+.day-header-banner[data-day="SUNDAY"],
+.day-header-banner[data-day-code="day3"] {
+  background: linear-gradient(90deg, rgba(255, 42, 133, 0.22) 0%, transparent 100%);
+  border-left: 6px solid var(--day3-color);
+}
+
+.day-header-banner[data-day-code="day4"] {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.22) 0%, transparent 100%);
+  border-left: 6px solid var(--day4-color);
 }
 
 .day-header-banner h2 {
@@ -502,11 +574,35 @@ body {
   padding: 1.25rem 1.5rem;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
+  border-left: 5px solid var(--primary-color); /* Default left margin accent strip */
   border-radius: var(--radius-md);
   backdrop-filter: blur(16px);
   transition: var(--transition-normal);
   position: relative;
   overflow: hidden;
+}
+
+/* Color-Coded Session Card Left Margin Strips */
+.session-card[data-day="FRIYAY"],
+.session-card[data-day="FRIDAY"],
+.session-card[data-day-code="day1"] {
+  border-left: 5px solid var(--day1-color) !important;
+}
+
+.session-card[data-day="SATURYAY"],
+.session-card[data-day="SATURDAY"],
+.session-card[data-day-code="day2"] {
+  border-left: 5px solid var(--day2-color) !important;
+}
+
+.session-card[data-day="SUNYAY"],
+.session-card[data-day="SUNDAY"],
+.session-card[data-day-code="day3"] {
+  border-left: 5px solid var(--day3-color) !important;
+}
+
+.session-card[data-day-code="day4"] {
+  border-left: 5px solid var(--day4-color) !important;
 }
 
 .session-card:hover {
@@ -627,31 +723,35 @@ body {
    -------------------------------------------------------------------------- */
 .grid-table-wrapper {
   width: 100%;
-  overflow-x: auto;
   border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
   background: var(--card-bg);
-  backdrop-filter: blur(16px);
 }
 
 .sheet-grid-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
   font-size: 0.875rem;
 }
 
+.sheet-grid-table thead th,
 .sheet-grid-table th {
+  position: sticky;
+  top: var(--nav-height, 140px); /* Dynamically docks right underneath the sticky navigation bar */
+  z-index: 95;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.4);
+  background: #0d0b1a !important; /* Solid dark background to prevent row bleed */
   color: var(--secondary-color);
   font-family: var(--font-heading);
   font-size: 0.85rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 2px solid var(--card-border);
+  border-bottom: 2px solid var(--secondary-color);
   white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
 }
 
 .sheet-grid-table td {

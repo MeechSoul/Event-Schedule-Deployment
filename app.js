@@ -507,6 +507,8 @@ function renderCurrentView() {
     DOM.agendaView.classList.add('hidden');
     renderSheetGridTable(filtered);
   }
+
+  updateStickyHeaderOffset();
 }
 
 // Render Agenda List Timeline Cards with Day Scoop Banners & Concurrent Indicators
@@ -524,7 +526,7 @@ function renderAgendaTimeline(sessions) {
       else if (lastGroupDay === 'SUNYAY') dayTitle = '🌟 SUNYAY - DAY 3';
 
       html += `
-        <div class="day-header-banner">
+        <div class="day-header-banner" data-day="${session.day}" id="day_banner_${session.day}">
           <h2>${dayTitle}</h2>
         </div>
       `;
@@ -533,7 +535,7 @@ function renderAgendaTimeline(sessions) {
       const scoops = state.dayScoops[lastGroupDay] || [];
       if (scoops.length > 0) {
         html += `
-          <div class="day-scoop-banner">
+          <div class="day-scoop-banner" data-day="${session.day}">
             <div class="day-scoop-title">
               <i class="fa-solid fa-bullhorn"></i>
               <span>${lastGroupDay} SCOOP & IMPORTANT NOTES</span>
@@ -555,7 +557,7 @@ function renderAgendaTimeline(sessions) {
     else if (loc.includes('bliss')) roomColorStyle = 'background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3);';
 
     html += `
-      <div class="session-card ${session.isConcurrent ? 'is-concurrent' : ''}" data-id="${session.id}">
+      <div class="session-card ${session.isConcurrent ? 'is-concurrent' : ''}" data-id="${session.id}" data-day="${session.day}">
         <div class="session-time-col">
           <span class="session-icon">${session.icon}</span>
           <span class="session-time">${escapeHtml(session.time)}</span>
@@ -598,9 +600,9 @@ function renderSheetGridTable(sessions) {
   DOM.gridTableHead.innerHTML = `
     <tr>
       <th>Day</th>
-      <th>Icon</th>
+      <th style="font-size: 1.1rem; text-align: center;">🦄</th>
       <th>Time</th>
-      <th>Event Title</th>
+      <th>Activity</th>
       <th>Format</th>
       <th>Artists / Staff</th>
       <th>Room / Location</th>
@@ -1015,3 +1017,44 @@ function hexToRgba(hex, alpha) {
   const b = parseInt(c.substring(4, 6), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
+
+/* ==========================================================================
+   SCROLLSPY: AUTO-HIGHLIGHT ACTIVE DAY TAB ON SCROLL
+   ========================================================================== */
+window.addEventListener('scroll', () => {
+  if (state.activeDay !== 'ALL' || state.currentView !== 'agenda') return;
+
+  const banners = document.querySelectorAll('.day-header-banner');
+  let currentScrollDay = null;
+
+  banners.forEach(b => {
+    const rect = b.getBoundingClientRect();
+    if (rect.top <= 240) {
+      currentScrollDay = b.getAttribute('data-day');
+    }
+  });
+
+  if (currentScrollDay) {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      const dayAttr = btn.getAttribute('data-day');
+      if (dayAttr === currentScrollDay) {
+        btn.classList.add('active');
+      } else if (dayAttr !== 'ALL') {
+        btn.classList.remove('active');
+      }
+    });
+  }
+});
+
+/* Dynamic calculation of navigation bar height for seamless sticky table header alignment */
+function updateStickyHeaderOffset() {
+  const navSec = document.querySelector('.navigation-section');
+  if (navSec) {
+    const navHeight = navSec.getBoundingClientRect().height;
+    document.documentElement.style.setProperty('--nav-height', `${Math.round(navHeight)}px`);
+  }
+}
+window.addEventListener('resize', updateStickyHeaderOffset);
+window.addEventListener('scroll', updateStickyHeaderOffset);
+document.addEventListener('DOMContentLoaded', updateStickyHeaderOffset);
+setTimeout(updateStickyHeaderOffset, 500);
