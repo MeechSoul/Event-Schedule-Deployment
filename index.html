@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Security & Content Security Policy (CSP) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://docs.google.com; img-src 'self' data: https:;">
+  
   <title>ATX ROX Schedule '26 | Live Event Schedule</title>
   <meta name="description" content="Live updating event schedule for ATX ROX - A Magical West Coast Swing Weekend. Updated in real-time from Google Sheets.">
   
@@ -25,16 +28,17 @@
     <div class="header-container">
       <div class="brand-badge">
         <span class="pulse-dot"></span>
-        <span id="liveStatusText">LIVE GOOGLE SHEETS SYNC</span>
+        <span id="liveStatusText">GET READY TO ROX!</span>
+        <span class="badge-divider" style="opacity: 0.6; margin: 0 0.4rem;">•</span>
+        <span class="badge-sync-time" style="font-size: 0.8rem; font-weight: 500; opacity: 0.9;">Last Synced: <strong id="lastSyncTime">Just now</strong></span>
       </div>
-      <h1 class="event-title" id="eventTitle">A MAGICAL WESTIE WEEKEND 🦄</h1>
+      <h1 class="event-title" id="eventTitle">AUSTIN ROX - 2026 SCHEDULE 🦄</h1>
       <p class="event-subtitle" id="eventSubtitle">ATX ROX 2026 • AUSTIN, TX • SEPT 18-20, 2026</p>
       
       <!-- Live Sync Controls -->
       <div class="sync-bar">
         <div class="sync-info">
           <i class="fa-solid fa-arrows-rotate sync-icon" id="syncSpinner"></i>
-          <span>Last Synced: <strong id="lastSyncTime">Just now</strong></span>
           <span class="sync-interval">(Auto-updates every 60s)</span>
         </div>
         <div class="header-actions">
@@ -320,15 +324,12 @@
     </div>
   </div>
 
+
+
   <!-- FOOTER -->
   <footer class="app-footer">
     <div class="footer-container">
-      <p>© 2026 ATX ROX • Powered by Google Sheets Live Sync Generator</p>
-      <div class="footer-links">
-        <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vRYBLvB4_05i_D7KHyR4v55tsRYfDS2PTN2zPRxjfxtT5gEfvuk1tuV2T-4HpYQgbgEz070Y7EDBnbz/pub?gid=1745454581&single=true&output=csv" target="_blank" rel="noopener"><i class="fa-solid fa-file-csv"></i> Source Google Sheet CSV</a>
-        <span>•</span>
-        <a href="#" id="footerEmbedLink"><i class="fa-solid fa-code"></i> Embed Code</a>
-      </div>
+      <p>© 2026 ATX ROX • Powered by Soul Studios</p>
     </div>
   </footer>
 

@@ -41,6 +41,12 @@ const DOM = {};
 
 // Initialize App on DOM Content Loaded
 document.addEventListener('DOMContentLoaded', () => {
+  const mode = getQueryParam('mode');
+  const isIframe = window.self !== window.top;
+  if (mode === 'public' || mode === 'embed' || isIframe) {
+    document.body.classList.add('is-public-mode');
+  }
+
   cacheDOMElements();
   loadSavedTheme();
   initEventListeners();
@@ -144,7 +150,7 @@ async function fetchGoogleSheetSchedule(isSilent = false) {
     if (state.rawCsvData === csvText && state.parsedSessions.length > 0) {
       state.lastSyncTimestamp = new Date();
       updateSyncTimeDisplay();
-      if (DOM.liveStatusText) DOM.liveStatusText.textContent = 'LIVE GOOGLE SHEETS SYNC';
+      if (DOM.liveStatusText) DOM.liveStatusText.textContent = 'GET READY TO ROX!';
       return;
     }
 
@@ -160,7 +166,7 @@ async function fetchGoogleSheetSchedule(isSilent = false) {
     updateSyncTimeDisplay();
     showLoading(false);
     DOM.errorState.classList.add('hidden');
-    if (DOM.liveStatusText) DOM.liveStatusText.textContent = 'LIVE GOOGLE SHEETS SYNC';
+    if (DOM.liveStatusText) DOM.liveStatusText.textContent = 'GET READY TO ROX!';
   } catch (err) {
     console.warn('Google Sheet fetch error:', err);
     if (state.parsedSessions.length === 0) {
@@ -757,7 +763,7 @@ function updateEmbedSnippetCode() {
   const theme = state.themeSettings.preset;
   const height = DOM.embedHeight.value || '850px';
 
-  const embedUrl = `${currentUrl}?sheet=${sheetUrl}&theme=${theme}`;
+  const embedUrl = `${currentUrl}?sheet=${encodeURIComponent(sheetUrl)}&theme=${theme}&mode=public`;
 
   const iframeSnippet = `<!-- START EVENT SCHEDULE EMBED CODE -->
 <iframe 
@@ -843,15 +849,19 @@ function initEventListeners() {
     renderCurrentView();
   });
 
-  DOM.btnOpenEmbedModal.addEventListener('click', () => {
-    updateEmbedSnippetCode();
-    DOM.embedModal.classList.remove('hidden');
-  });
-  DOM.footerEmbedLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    updateEmbedSnippetCode();
-    DOM.embedModal.classList.remove('hidden');
-  });
+  if (DOM.btnOpenEmbedModal) {
+    DOM.btnOpenEmbedModal.addEventListener('click', () => {
+      updateEmbedSnippetCode();
+      DOM.embedModal.classList.remove('hidden');
+    });
+  }
+  if (DOM.footerEmbedLink) {
+    DOM.footerEmbedLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      updateEmbedSnippetCode();
+      DOM.embedModal.classList.remove('hidden');
+    });
+  }
   DOM.btnCloseEmbedModal.addEventListener('click', () => DOM.embedModal.classList.add('hidden'));
   DOM.btnDoneEmbed.addEventListener('click', () => DOM.embedModal.classList.add('hidden'));
   DOM.embedHeight.addEventListener('input', () => updateEmbedSnippetCode());

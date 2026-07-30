@@ -1187,3 +1187,139 @@ body {
   border-radius: 4px;
   border-left: 2px solid var(--accent-gold);
 }
+
+/* ==========================================================================
+   PUBLIC EMBED MODE & ADMIN DASHBOARD STYLES
+   ========================================================================== */
+
+/* Hide Director/Admin Controls on Public Attendee Embed Mode */
+body.is-public-mode .sync-bar,
+body.is-public-mode .header-actions,
+body.is-public-mode #btnOpenEmbedModal,
+body.is-public-mode #btnOpenThemeDrawer,
+body.is-public-mode #btnSyncNow {
+  display: none !important;
+}
+
+body.is-public-mode .app-header {
+  padding: 1.75rem 1.5rem 1.25rem;
+}
+
+/* Admin Portal Layout */
+.admin-body {
+  background: #090714;
+  color: var(--text-main);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+.admin-header {
+  padding: 1.5rem 2rem;
+  background: rgba(13, 11, 26, 0.9);
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.admin-header-title i {
+  color: var(--primary-color);
+}
+
+.admin-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .admin-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  backdrop-filter: blur(16px);
+  margin-bottom: 1.5rem;
+}
+
+.admin-card-title {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 0.75rem;
+}
+
+.admin-card-title i {
+  color: var(--secondary-color);
+}
+
+.event-item-card {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.event-item-card:hover,
+.event-item-card.active {
+  background: rgba(255, 42, 133, 0.12);
+  border-color: var(--primary-color);
+}
+
+.event-item-info h4 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.2rem;
+}
+
+.event-item-info p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.preview-frame-wrapper {
+  width: 100%;
+  height: 780px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
