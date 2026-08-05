@@ -537,12 +537,12 @@ body {
 }
 
 .day-header-banner {
-  padding: 1rem 1.5rem;
+  padding: 0.55rem 1.25rem 0.25rem 1.25rem;
   background: linear-gradient(90deg, rgba(255, 42, 133, 0.15) 0%, transparent 100%);
   border-left: 6px solid var(--primary-color);
   border-radius: var(--radius-md);
   margin-top: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.1rem;
   scroll-margin-top: 180px; /* Offset for smooth scroll positioning */
 }
 
@@ -618,6 +618,52 @@ body {
 
 .session-card[data-day-code="day4"] {
   border-left: 5px solid var(--day4-color) !important;
+}
+
+/* Top-Right Diagonal Day Flag Ribbon */
+.corner-day-flag {
+  position: absolute;
+  top: 12px;
+  right: -30px;
+  width: 100px;
+  text-align: center;
+  transform: rotate(45deg);
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0;
+  color: #ffffff;
+  background: #ff2a85; /* Hot Pink Default */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  text-transform: uppercase;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Day-Specific Corner Flag Colors */
+.corner-day-flag[data-day-abbr="FRI"],
+.session-card[data-day="FRIYAY"] .corner-day-flag,
+.session-card[data-day="FRIDAY"] .corner-day-flag {
+  background: #ff2a85; /* Hot Pink for Friday */
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(255, 42, 133, 0.5);
+}
+
+.corner-day-flag[data-day-abbr="SAT"],
+.session-card[data-day="SATURYAY"] .corner-day-flag,
+.session-card[data-day="SATURDAY"] .corner-day-flag {
+  background: #00f0ff; /* Electric Cyan for Saturday */
+  color: #0d0b1a;
+  box-shadow: 0 2px 8px rgba(0, 240, 255, 0.5);
+}
+
+.corner-day-flag[data-day-abbr="SUN"],
+.session-card[data-day="SUNYAY"] .corner-day-flag,
+.session-card[data-day="SUNDAY"] .corner-day-flag {
+  background: #a855f7; /* Purple Glow for Sunday */
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.5);
 }
 
 .session-card:hover {
@@ -1067,11 +1113,27 @@ body {
   .session-time-col {
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     border-right: none;
     border-bottom: 1px solid var(--card-border);
     padding-right: 0;
     padding-bottom: 0.6rem;
+    gap: 0.5rem;
+  }
+
+  .session-time {
+    order: 1;
+  }
+
+  .badge-concurrent {
+    order: 2;
+    margin-top: 0;
+  }
+
+  .session-icon {
+    order: 3;
+    margin-left: auto;
+    margin-right: 1.8rem;
   }
 
   .sync-bar {
@@ -1115,12 +1177,12 @@ body {
    11. DAY SCOOP BANNER & SPONSORS SHOWCASE
    -------------------------------------------------------------------------- */
 .day-scoop-banner {
-  padding: 1rem 1.25rem;
+  padding: 0.25rem 1rem 0.55rem 1rem;
   background: rgba(0, 240, 255, 0.06);
   border: 1px solid rgba(0, 240, 255, 0.25);
   border-radius: var(--radius-md);
-  margin-top: 0.5rem;
-  margin-bottom: 1.25rem;
+  margin-top: 0.1rem;
+  margin-bottom: 0.5rem;
   backdrop-filter: blur(12px);
 }
 
@@ -1228,8 +1290,109 @@ body {
    PUBLIC EMBED MODE & ADMIN DASHBOARD STYLES
    ========================================================================== */
 
+/* Top Sponsors Scrolling Marquee Banner */
+.top-sponsor-marquee {
+  width: 100%;
+  background: linear-gradient(90deg, rgba(255, 42, 133, 0.25) 0%, rgba(13, 11, 26, 0.95) 15%, rgba(13, 11, 26, 0.95) 85%, rgba(0, 240, 255, 0.25) 100%);
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  height: 38px;
+  position: relative;
+  z-index: 101;
+}
+
+.public-sponsor-banner {
+  display: none;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  height: 38px;
+  overflow: hidden;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.marquee-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.85rem;
+  background: var(--primary-color);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  height: 100%;
+  white-space: nowrap;
+  box-shadow: 0 0 12px var(--primary-glow);
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.marquee-track-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.marquee-track {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  white-space: nowrap;
+  animation: marqueeScroll 25s linear infinite;
+  will-change: transform;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffffff 30%, var(--primary-color) 70%, var(--secondary-color) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.marquee-item i {
+  color: var(--secondary-color);
+  font-size: 0.7rem;
+  -webkit-text-fill-color: initial;
+}
+
+@keyframes marqueeScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+
 /* Hide Director/Admin Controls on Public Attendee Embed Mode */
-body.is-public-mode .sync-bar,
+body.is-public-mode .top-sponsor-marquee {
+  display: none !important;
+}
+
+body.is-public-mode .sync-info {
+  display: none !important;
+}
+
+body.is-public-mode .public-sponsor-banner {
+  display: flex !important;
+}
+
 body.is-public-mode .header-actions,
 body.is-public-mode #btnOpenEmbedModal,
 body.is-public-mode #btnOpenThemeDrawer,

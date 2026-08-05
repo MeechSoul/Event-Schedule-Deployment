@@ -7,6 +7,7 @@
 // Global State
 const CONFIG = {
   defaultCsvUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRYBLvB4_05i_D7KHyR4v55tsRYfDS2PTN2zPRxjfxtT5gEfvuk1tuV2T-4HpYQgbgEz070Y7EDBnbz/pub?gid=1745454581&single=true&output=csv',
+  sponsorCsvUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRYBLvB4_05i_D7KHyR4v55tsRYfDS2PTN2zPRxjfxtT5gEfvuk1tuV2T-4HpYQgbgEz070Y7EDBnbz/pub?gid=1026623419&single=true&output=csv',
   syncIntervalMs: 60000, // 60 seconds auto-sync
 };
 
@@ -51,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSavedTheme();
   initEventListeners();
   fetchGoogleSheetSchedule(false); // Initial load
+  fetchSponsorsData();             // Fetch dedicated sponsor CSV
   startAutoSyncTimer();
 });
 
@@ -457,37 +459,57 @@ function updateRoomFilterUI() {
   DOM.roomFilter.innerHTML = html;
 }
 
-function renderSponsorsUI() {
-  if (!DOM.sponsorsContainer) return;
-  if (state.sponsorsFound.length === 0) {
-    DOM.sponsorsContainer.classList.add('hidden');
-    return;
+async function fetchSponsorsData() {
+  const url = CONFIG.sponsorCsvUrl;
+  try {
+    const res = await fetch(url);
+    if (res.ok) {
+      const text = await res.text();
+      const rows = parseCSVRows(text);
+      const sponsors = [];
+      rows.forEach(r => {
+        if (r && r[0]) {
+          const val = r[0].trim();
+          if (val && !val.toUpperCase().startsWith('SPONSOR')) {
+            sponsors.push(val);
+          }
+        }
+      });
+      if (sponsors.length > 0) {
+        state.sponsorsFound = sponsors.map(s => ({ name: s }));
+        renderSponsorsUI();
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('Dedicated sponsor CSV fetch error:', err);
   }
 
-  DOM.sponsorsContainer.classList.remove('hidden');
-  let html = `
-    <div class="sponsors-bar">
-      <div class="sponsors-header">
-        <i class="fa-solid fa-trophy"></i>
-        <span>THANK YOU TO OUR EVENT SPONSORS</span>
-      </div>
-      <div class="sponsors-grid">
-  `;
+  // Fallback sponsors
+  const fallbackSponsors = [
+    'ADDICTED TO SWING SHIRTS', 'ANTHONY ROBINSKY', 'AUSTIN WESTIE ACADEMY',
+    'FLOORPLAY SWING VACATION!', 'LAURA MAILANDER', 'MICHAEL MCLAUGHLIN',
+    'SCOTT & SUMA', 'SD WESTIE', 'THERESA CONNOLLY', 'WESTIE REMIX', 'WILD WILD WESTIE'
+  ];
+  state.sponsorsFound = fallbackSponsors.map(s => ({ name: s }));
+  renderSponsorsUI();
+}
 
+function renderSponsorsUI() {
+  const marqueeTrack = document.getElementById('marqueeTrack');
+  const publicMarqueeTrack = document.getElementById('publicMarqueeTrack');
+  if (!state.sponsorsFound || state.sponsorsFound.length === 0) return;
+
+  let itemsHtml = '';
   state.sponsorsFound.forEach(sp => {
-    if (sp.logoUrl) {
-      html += `<div class="sponsor-card sponsor-logo"><img src="${sp.logoUrl}" alt="${escapeHtml(sp.name)}" title="${escapeHtml(sp.name)}"></div>`;
-    } else {
-      html += `<div class="sponsor-card sponsor-badge"><i class="fa-solid fa-star"></i> ${escapeHtml(sp.name)}</div>`;
-    }
+    itemsHtml += `<span class="marquee-item"><i class="fa-solid fa-star"></i> ${escapeHtml(sp.name)}</span>`;
   });
 
-  html += `
-      </div>
-    </div>
-  `;
+  // Duplicate 3x to guarantee smooth infinite seamless looping
+  const fullTrackHtml = itemsHtml + itemsHtml + itemsHtml;
 
-  DOM.sponsorsContainer.innerHTML = html;
+  if (marqueeTrack) marqueeTrack.innerHTML = fullTrackHtml;
+  if (publicMarqueeTrack) publicMarqueeTrack.innerHTML = fullTrackHtml;
 }
 
 function getFilteredSessions() {
@@ -599,12 +621,25 @@ function renderAgendaTimeline(sessions) {
     else if (loc.includes('small room')) roomColorStyle = 'background: rgba(255, 215, 0, 0.15); color: #ffd700; border-color: rgba(255, 215, 0, 0.3);';
     else if (loc.includes('bliss')) roomColorStyle = 'background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3);';
 
+    // Compute Abbreviated Day Name (FRI, SAT, SUN)
+    let dayAbbr = 'FRI';
+    const dUpper = session.day.toUpperCase();
+    if (dUpper.includes('FRI')) dayAbbr = 'FRI';
+    else if (dUpper.includes('SAT')) dayAbbr = 'SAT';
+    else if (dUpper.includes('SUN')) dayAbbr = 'SUN';
+    else if (dUpper.includes('MON')) dayAbbr = 'MON';
+    else if (dUpper.includes('TUE')) dayAbbr = 'TUE';
+    else if (dUpper.includes('WED')) dayAbbr = 'WED';
+    else if (dUpper.includes('THU')) dayAbbr = 'THU';
+    else dayAbbr = session.day.substring(0, 3).toUpperCase();
+
     html += `
       <div class="session-card ${session.isConcurrent ? 'is-concurrent' : ''}" data-id="${session.id}" data-day="${session.day}">
+        <div class="corner-day-flag" data-day-abbr="${dayAbbr}">${dayAbbr}</div>
         <div class="session-time-col">
-          <span class="session-icon">${session.icon}</span>
           <span class="session-time">${escapeHtml(session.time)}</span>
-          ${session.isConcurrent ? `<span class="badge-concurrent" title="${session.concurrentCount} events happening simultaneously"><i class="fa-solid fa-layer-group"></i> Concurrent Track</span>` : ''}
+          ${session.isConcurrent ? `<span class="badge-concurrent" title="${session.concurrentCount} events happening simultaneously"><i class="fa-solid fa-layer-group"></i> Concurrent Event</span>` : ''}
+          <span class="session-icon">${session.icon}</span>
         </div>
         <div class="session-main-col">
           <div class="session-top-meta">
@@ -688,7 +723,7 @@ function openEventDetailModal(session) {
     <div style="display: flex; flex-wrap: wrap; gap: 1rem; color: var(--secondary-color); font-weight: 700; font-size: 1rem; margin-bottom: 1rem;">
       <span><i class="fa-regular fa-clock"></i> ${escapeHtml(session.time)} (${session.day})</span>
       <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(session.location)}</span>
-      ${session.isConcurrent ? `<span style="color: var(--primary-color);"><i class="fa-solid fa-layer-group"></i> Concurrent Track</span>` : ''}
+      ${session.isConcurrent ? `<span style="color: var(--primary-color);"><i class="fa-solid fa-layer-group"></i> Concurrent Event</span>` : ''}
     </div>
     ${session.artists ? `
       <p style="color: var(--accent-gold); font-weight: 600; margin-bottom: 0.75rem;">

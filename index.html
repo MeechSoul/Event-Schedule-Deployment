@@ -22,6 +22,18 @@
 </head>
 <body class="theme-atx-rox">
 
+  <!-- TOP SPONSORS SCROLLING MARQUEE BANNER -->
+  <div class="top-sponsor-marquee" id="topSponsorMarquee">
+    <div class="marquee-label">
+      <i class="fa-solid fa-trophy"></i> SPONSORS:
+    </div>
+    <div class="marquee-track-container">
+      <div class="marquee-track" id="marqueeTrack">
+        <!-- Dynamically populated sponsor marquee -->
+      </div>
+    </div>
+  </div>
+
   <!-- TOP BRAND HERO BANNER -->
   <header class="app-header">
     <div class="header-overlay"></div>
@@ -35,11 +47,21 @@
       <h1 class="event-title" id="eventTitle">AUSTIN ROX - 2026 SCHEDULE 🦄</h1>
       <p class="event-subtitle" id="eventSubtitle">ATX ROX 2026 • AUSTIN, TX • SEPT 18-20, 2026</p>
       
-      <!-- Live Sync Controls -->
+      <!-- Live Sync Controls & Public Mode Sponsor Marquee -->
       <div class="sync-bar">
         <div class="sync-info">
           <i class="fa-solid fa-arrows-rotate sync-icon" id="syncSpinner"></i>
           <span class="sync-interval">(Auto-updates every 60s)</span>
+        </div>
+        <div class="public-sponsor-banner" id="publicSponsorBanner">
+          <div class="marquee-label">
+            <i class="fa-solid fa-trophy"></i> SPONSORS:
+          </div>
+          <div class="marquee-track-container">
+            <div class="marquee-track" id="publicMarqueeTrack">
+              <!-- Dynamically populated sponsor marquee -->
+            </div>
+          </div>
         </div>
         <div class="header-actions">
           <button class="btn btn-secondary btn-sm" id="btnSyncNow">
