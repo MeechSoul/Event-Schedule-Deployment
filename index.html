@@ -45,11 +45,17 @@
           <button class="btn btn-secondary btn-sm" id="btnSyncNow">
             <i class="fa-solid fa-rotate"></i> Sync Now
           </button>
-          <button class="btn btn-primary btn-sm" id="btnOpenEmbedModal">
-            <i class="fa-solid fa-code"></i> Embed on Website
-          </button>
+          <a href="admin.html" class="btn btn-secondary btn-sm" id="btnAdminPage">
+            <i class="fa-solid fa-user-gear"></i> Admin
+          </a>
+          <a href="index.html?mode=public" class="btn btn-secondary btn-sm" id="btnPublicView" target="_blank">
+            <i class="fa-solid fa-globe"></i> Public View
+          </a>
           <button class="btn btn-secondary btn-sm" id="btnOpenThemeDrawer">
             <i class="fa-solid fa-palette"></i> Brand Kit
+          </button>
+          <button class="btn btn-primary btn-sm" id="btnOpenEmbedModal">
+            <i class="fa-solid fa-code"></i> Embed on Website
           </button>
         </div>
       </div>
@@ -61,35 +67,19 @@
     
     <!-- CONTROLS & NAVIGATION BAR -->
     <section class="navigation-section">
-      <!-- Day Tabs Bar -->
-      <div class="tabs-scroll-container">
-        <div class="day-tabs" id="dayTabsContainer">
-          <!-- Dynamically populated day tabs -->
-          <button class="tab-btn active" data-day="ALL">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Full Schedule
-          </button>
-          <button class="tab-btn" data-day="FRIYAY">FRIYAY (Sept 18)</button>
-          <button class="tab-btn" data-day="SATURYAY">SATURYAY (Sept 19)</button>
-          <button class="tab-btn" data-day="SUNYAY">SUNYAY (Sept 20)</button>
-        </div>
-      </div>
-
-      <!-- Search, Filter & Layout Switcher Bar -->
-      <div class="toolbar">
-        <!-- Search Box -->
-        <div class="search-box">
-          <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input type="text" id="searchInput" placeholder="Search events, workshops, DJs, speakers..." aria-label="Search Schedule">
-          <button class="clear-search" id="btnClearSearch" title="Clear Search" style="display: none;">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <!-- Room / Track Filter Dropdown -->
-        <div class="filter-group">
-          <select id="roomFilter" class="select-input" aria-label="Filter by Location">
-            <option value="ALL">All Rooms & Locations</option>
-          </select>
+      <!-- Day Tabs, View Switcher & Search Bar Top Row -->
+      <div class="nav-single-row">
+        <!-- Day Tabs Bar -->
+        <div class="tabs-scroll-container">
+          <div class="day-tabs" id="dayTabsContainer">
+            <!-- Dynamically populated day tabs -->
+            <button class="tab-btn active" data-day="ALL">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Full Schedule
+            </button>
+            <button class="tab-btn" data-day="FRIYAY">FRIYAY (Sept 18)</button>
+            <button class="tab-btn" data-day="SATURYAY">SATURYAY (Sept 19)</button>
+            <button class="tab-btn" data-day="SUNYAY">SUNYAY (Sept 20)</button>
+          </div>
         </div>
 
         <!-- View Mode Switcher -->
@@ -103,6 +93,15 @@
             <span>Grid View</span>
           </button>
         </div>
+
+        <!-- Search Box -->
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="searchInput" placeholder="Search..." aria-label="Search Schedule">
+          <button class="clear-search" id="btnClearSearch" title="Clear Search" style="display: none;">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Quick Category Pills -->
@@ -110,10 +109,7 @@
         <button class="pill-btn active" data-category="ALL">All Categories</button>
         <button class="pill-btn" data-category="WCS">🎓 Workshops</button>
         <button class="pill-btn" data-category="ALLSK8">🏆 Competitions</button>
-        <button class="pill-btn" data-category="FUN">🦄 Social Dancing</button>
-        <button class="pill-btn" data-category="LATE NITE">🍄 Late Night</button>
         <button class="pill-btn" data-category="SHOW">✨ Shows & Routines</button>
-        <button class="pill-btn" data-category="POOL PARTY">🛟 Pool Party</button>
         <button class="pill-btn" data-category="BLISS">🧘 Bliss & Wellness</button>
       </div>
 

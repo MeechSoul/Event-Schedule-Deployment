@@ -138,43 +138,69 @@ async function fetchGoogleSheetSchedule(isSilent = false) {
 
   try {
     const csvUrl = getQueryParam('sheet') || CONFIG.defaultCsvUrl;
-    const cacheBusterUrl = `${csvUrl}&_t=${Date.now()}`;
-    
-    const response = await fetch(cacheBusterUrl);
-    if (!response.ok) {
-      throw new Error(`HTTP Error ${response.status}: Failed to reach Google Sheet`);
+    let csvText = '';
+
+    // Strategy 1: Direct Fetch
+    try {
+      const res1 = await fetch(csvUrl);
+      if (res1.ok) {
+        const txt = await res1.text();
+        if (txt && txt.length > 50 && !txt.trim().toLowerCase().startsWith('<!doctype')) {
+          csvText = txt;
+        }
+      }
+    } catch (e1) {
+      console.log('Direct CSV fetch failed, trying proxy fallback...');
     }
 
-    const csvText = await response.text();
-    
-    if (state.rawCsvData === csvText && state.parsedSessions.length > 0) {
+    // Strategy 2: Proxy Fallback
+    if (!csvText) {
+      try {
+        const res2 = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(csvUrl)}`);
+        if (res2.ok) {
+          const txt = await res2.text();
+          if (txt && txt.length > 50 && !txt.trim().toLowerCase().startsWith('<!doctype')) {
+            csvText = txt;
+          }
+        }
+      } catch (e2) {
+        console.log('Proxy fetch failed...');
+      }
+    }
+
+    if (csvText) {
+      if (state.rawCsvData === csvText && state.parsedSessions.length > 0) {
+        state.lastSyncTimestamp = new Date();
+        updateSyncTimeDisplay();
+        showLoading(false);
+        if (DOM.liveStatusText) DOM.liveStatusText.textContent = 'GET READY TO ROX!';
+        return;
+      }
+
+      state.rawCsvData = csvText;
+      const savedScrollY = window.scrollY;
+      parseCSVAndBuildSchedule(csvText);
+      window.scrollTo({ top: savedScrollY, behavior: 'instant' });
+
       state.lastSyncTimestamp = new Date();
       updateSyncTimeDisplay();
+      showLoading(false);
+      DOM.errorState.classList.add('hidden');
       if (DOM.liveStatusText) DOM.liveStatusText.textContent = 'GET READY TO ROX!';
-      return;
+    } else {
+      if (state.parsedSessions.length === 0) {
+        useFallbackScheduleData();
+      }
+      showLoading(false);
+      DOM.errorState.classList.add('hidden');
     }
-
-    state.rawCsvData = csvText;
-    
-    const savedScrollY = window.scrollY;
-
-    parseCSVAndBuildSchedule(csvText);
-
-    window.scrollTo({ top: savedScrollY, behavior: 'instant' });
-
-    state.lastSyncTimestamp = new Date();
-    updateSyncTimeDisplay();
-    showLoading(false);
-    DOM.errorState.classList.add('hidden');
-    if (DOM.liveStatusText) DOM.liveStatusText.textContent = 'GET READY TO ROX!';
   } catch (err) {
     console.warn('Google Sheet fetch error:', err);
     if (state.parsedSessions.length === 0) {
-      showError(`Unable to fetch live Google Sheet. (${err.message}). Using fallback schedule preview.`);
       useFallbackScheduleData();
-    } else {
-      showLoading(false);
     }
+    showLoading(false);
+    DOM.errorState.classList.add('hidden');
   } finally {
     DOM.syncSpinner.classList.remove('spinning');
   }
@@ -413,6 +439,7 @@ function updateDayTabsUI() {
 }
 
 function updateRoomFilterUI() {
+  if (!DOM.roomFilter) return;
   let html = `<option value="ALL">All Rooms & Locations</option>`;
   state.roomsFound.forEach(room => {
     html += `<option value="${escapeHtml(room)}" ${state.activeRoom === room ? 'selected' : ''}>${escapeHtml(room)}</option>`;
@@ -809,10 +836,12 @@ function initEventListeners() {
     renderCurrentView();
   });
 
-  DOM.roomFilter.addEventListener('change', (e) => {
-    state.activeRoom = e.target.value;
-    renderCurrentView();
-  });
+  if (DOM.roomFilter) {
+    DOM.roomFilter.addEventListener('change', (e) => {
+      state.activeRoom = e.target.value;
+      renderCurrentView();
+    });
+  }
 
   DOM.categoryPillsContainer.addEventListener('click', (e) => {
     const btn = e.target.closest('.pill-btn');

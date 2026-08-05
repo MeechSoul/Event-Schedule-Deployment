@@ -227,6 +227,8 @@ body {
 
 .header-actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -292,18 +294,28 @@ body {
   z-index: 100;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  margin-bottom: 2rem;
-  padding: 0.75rem 0;
+  gap: 0.65rem;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 0;
   background: rgba(13, 11, 26, 0.85);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--card-border);
 }
 
+/* Day Tabs, View Switcher & Search Bar Top Navigation Row */
+.nav-single-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: flex-start;
+  width: 100%;
+}
+
 /* Day Tabs Bar */
 .tabs-scroll-container {
   overflow-x: auto;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0;
   scrollbar-width: thin;
   scrollbar-color: var(--primary-color) transparent;
 }
@@ -1072,9 +1084,30 @@ body {
     justify-content: space-between;
   }
 
+  .navigation-section {
+    gap: 0.4rem;
+    padding: 0.3rem 0;
+    margin-bottom: 1rem;
+  }
+
   .toolbar {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .search-box {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 0.45rem 0.6rem 0.45rem 2.2rem;
   }
 }
 
