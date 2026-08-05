@@ -263,14 +263,15 @@ function parseCSVAndBuildSchedule(csvText) {
 
     // Extract Scoop Note (Column M = index 12, or fallback to 11/10)
     const rawScoopVal = (cols[12] || cols[11] || cols[10] || '').trim();
+    const cleanedRawScoop = rawScoopVal.replace(/^["'\s]+/, '').trim();
     
     // Asterisk Display Rules:
     // ** (double asterisk): Listed ONLY at Top-of-Day Scoop Banner, NOT on event card.
     // *  (single asterisk): Listed in BOTH Top-of-Day Scoop Banner AND on event card.
     //    (no asterisk):     Listed ONLY on event card, NOT in Top-of-Day banner.
-    const isDoubleAsterisk = rawScoopVal.startsWith('**');
-    const isSingleAsterisk = rawScoopVal.startsWith('*') && !isDoubleAsterisk;
-    const cleanScoopVal = rawScoopVal.replace(/^\*+\s*/, '').trim();
+    const isDoubleAsterisk = cleanedRawScoop.startsWith('**');
+    const isSingleAsterisk = cleanedRawScoop.startsWith('*') && !isDoubleAsterisk;
+    const cleanScoopVal = cleanedRawScoop.replace(/^\*+\s*/, '').trim();
 
     if (cleanScoopVal && cleanScoopVal !== '💥' && !cleanScoopVal.toUpperCase().includes('SCOOP')) {
       // Include in Top-of-Day Banner if it has * or **
@@ -282,13 +283,22 @@ function parseCSVAndBuildSchedule(csvText) {
       }
     }
 
-    // Check time column
-    const rawTimeVal = (cols[3] || cols[2] || cols[1] || '').trim();
-    const isTimeFormat = /^(\d{1,2}:\d{2}\s*(?:AM|PM)?|\d{1,2}\s*(?:AM|PM))/i.test(rawTimeVal);
+    // Check time column (Column D = index 3)
+    const col3Val = (cols[3] || '').trim();
+    const isTimeFormat = /^(\d{1,2}:\d{2}\s*(?:AM|PM)?|\d{1,2}\s*(?:AM|PM))/i.test(col3Val);
 
     let timeVal = '';
     if (isTimeFormat) {
-      timeVal = rawTimeVal;
+      timeVal = col3Val;
+      // Auto-correct AM/PM typos in Google Sheet:
+      // 1. "12:00 PM" for Late Night Kickoff on Friday night after 10PM -> 12:00 AM
+      if (timeVal === '12:00 PM' && (lastKnownTime.includes('10:') || lastKnownTime.includes('11:'))) {
+        timeVal = '12:00 AM';
+      }
+      // 2. "5:45 AM" for Sunday Awards after 5:00 PM -> 5:45 PM
+      if (timeVal === '5:45 AM' && (lastKnownTime.includes('5:00 PM') || lastKnownTime.includes('4:'))) {
+        timeVal = '5:45 PM';
+      }
       lastKnownTime = timeVal;
     } else if (lastKnownTime) {
       timeVal = lastKnownTime;
@@ -976,36 +986,99 @@ function initEventListeners() {
    ========================================================================== */
 
 function useFallbackScheduleData() {
-  const fallbackCsv = `,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-,,ATX ROX - 2026 SCHEDULE ,,,,,,,,,,,,,,,,,,,,,,,,,,
-,, FRIYAY,,,THE MAGIC,FORMAT,ARTISTS,ARTISTS,LOCAL,,,THE SCOOP,,,,SPONSORS!
-,,🎓,3:00 PM,,Registration Desk Opens! ,Welcome!,RYAN & KELLY,,Foyer,🎓,,💥
-,,🎓,4:00 PM,,Ballroom Opens for Social Dancing!,FUN,DJ LIZ,,Big Room,🎓,,REGISTRATION OPENS 3PM,,,,AWA
-,,🎓,5:00 PM,,WCS: MAGIC MOMENTS (All Levels),WCS,THIBAULT & NICOLE,,Big Room,🎓,,FRIDAY CONTEST SIGN-UP DEADLINE
-,,🎓,6:00 PM,,WCS: MAGIC MOVEMENT (All Levels),WCS,EMILY & SEBASTIAN,,Big Room,🎓,,FRIDAY 6:00PM
-,,🎓,,,WCS: JACK & JILL PREP CLASS (Intermediate),WCS,GLENN BALL,,Side Room,🎓,,COMPS ARE IN THE BIG ROOM
-,,🎓,,,WCS: MAGIC SWITCHES (All Levels),WCS,SAM B. & VICTORIA,,Small Room,🎓,,Now on 2 Floors!,,,,SWING CITY CHICAGO
-,,🦄,7:00 PM,,Open Dancing!,FUN,DJ ANDRES,,Big Room,🦄,,💥
-,,🏆,7:30 PM,,Allstar J&J (Prelims),ALLSK8,DJ RUBY ROX,MC Glenn,Big Room,🏆,,SIDE ROOM: PHOENIX NORTH
-,,🏆,8:00 PM,,Novice J&J (Prelims - Floor 1),ALLSK8,DJ RUBY ROX,MC Glenn,Big Room,🏆,,SMALL ROOM: AUSTIN ROOM
-,,🍄,12:00 PM,,Late Night Magic -- KICKOFF!,LATE NITE,DJ RUBY ROX,,Big Room,🍄,,LATE NIGHT PARTY,,,,FLOORPLAY SWING VACATION
-,, SATURYAY,,,THE MAGIC,FORMAT,ARTISTS,ARTISTS,LOCAL,,,THE SCOOP
-,,🦄,9:00 AM,,BLISS: CACAO & INTENTION SETTING,BLISS,TALETHA RIVAS,,Bliss Room,🦄,,MORNING INTENTION
-,,🎓,10:00 AM,,WCS: MAGIC GROOVES (All Levels),WCS,CHRIS & ALEXIS,,Big Room,🎓,,WORKSHOP
-,,🎓,11:00 AM,,WCS: MAGIC TIMELESS MOVES (All Levels),WCS,KP & BRYN,,Big Room,🎓,,ADVANCED MOVES,,,,WESTIE REMIX
-,,🏆,1:15 PM,,ProAm Strictly - New/Nov, & Int,ALLSK8,DJ ANDRES,MC Tara,Big Room,🏆,,COMPETITIONS
-,,🛟,6:00 PM,,POOL PARTY & Dinner Break!,POOL PARTY,DJ BREE,,Pool,🛟,,POOL PARTY
-,,🦄,8:30 PM,,THE SHOW 1ST ACT: PRO AM ROUTINES,SHOW,DJ KOICHI,MC Sheven,Big Room,🦄,,PRO-AM SHOWCASE
-,,🍄,11:30 PM,,LATE NIGHT MAGIC,LATE NITE,DJ LIZ,DJ ARIEL,Big Room,🍄,,MIDNIGHT DANCING
-,, 🍄 ,1:00 AM,,SWITCH LATE NIGHT FINALS!,LATE NITE,DJ BREE,MC Tara,Side Room,🍄,,SWITCH FINALS @ 1AM
-,, SUNYAY,,,THE MAGIC,FORMAT,ARTISTS,ARTISTS,LOCAL,,,THE SCOOP
-,,🎓,9:30 AM,,WCS: MAGIC MOVES (All Levels),WCS,GLENN BALL,,Big Room,🎓,,SUNDAY MORNING
-,,🎓,10:30 AM,,MAGIC FOOTWORK (All Levels),WCS,KEERIGAN & MIA,,Big Room,🎓,,FOOTWORK CLASS
-,,🏆,2:00 PM,,ALL YOU-NICORN JJ,ALLSK8,DJ RUBY ROX,MC Glenn,Big Room,🏆,,SPECIAL CONTEST
-,,🥇,5:45 AM,,AWARDS,AWARDS,DJ KOICHI,MC Sheven,Big Room,🥇,,CONTEST AWARDS
-,,🍄,10:00 PM,,Meech'n'You-Nicorns,LATE NITE,DJ Meechy,,Big Room,🍄,,SUNDAY LATE NIGHT`;
-
+  const fallbackCsv = `,,,,,,,,,,,,,
+,,ATX ROX - 2026 SCHEDULE ,,,,,,(double asterisk): Displays in the Top-of-Day Scoop Banner ONLY,BIG ROOM: PHOENIX CENTRAL,,,,
+,,AUSTIN ROCKS SCHEDULE IS SUBJECT TO CHANGE: UPDATED 4/15/2026,,,,,,(single asterisk): Displays in BOTH the Top-of-Day Scoop Banner AND on the event card,SIDE ROOM: PHOENIX NORTH,,,,
+,,,,,,,,(no asterics - displays in event block only,SMALL ROOM: AUSTIN ROOM,,,,
+,,"A MAGICAL WESTIE WEEKEND: SEPT 18-20, 2026!",,,,,,,BLISS ROOM = DEZAVALA,,,,
+,,🦄 🎓 🍬 🍄 🏆 🥇 🪄🛟,,,,,,,PRIVATES ROOM = DEWITT,,,,
+,,,,,,,,,,,,,
+,, FRIYAY,,,THE MAGIC,FORMAT,ARTISTS,ARTISTS,LOCAL,,,THE SCOOP,SPONSORS!
+,,🎓,3:00 PM,,Registration Desk Opens! ,Welcome!,RYAN & KELLY,,Foyer,,,**REGISTRATION OPENS 3PM,SPONSOR: AUSTIN WESTIE ACADEMY!
+,,🎓,4:00 PM,,Ballroom Opens for Social Dancing!,FUN,DJ LIZ,,Big Room,,,**FRIDAY CONTEST SIGN-UP DEADLINE  = FRIDAY 6PM,
+,,🎓,5:00 PM,,WCS: MAGIC MOMENTS (All Levels),WORKSHOP,THIBAULT & NICOLE,,Big Room,,,**READ OUR WEBSITE ON HOW WE LEVEL CLASSES,
+,,🎓,6:00 PM,,WCS: MAGIC MOVEMENT (All Levels),WORKSHOP,EMILY & SEBASTIAN,,Big Room,,,,
+,,🎓,,,WCS: JACK & JILL PREP CLASS (Intermediate),WORKSHOP,GLENN BALL,,Side Room,,,,
+,,🎓,,,WCS: MAGIC SWITCHES (All Levels),WORKSHOP,SAM B. & VICTORIA,,Small Room,,,,
+,,🦄,7:00 PM,,Open Dancing!,FUN,DJ ANDRES,,Big Room,,,,
+,,🦄,7:15 PM,,Opening Ceremonies - Photos & Stage for Allstars,FUN,DJ ANDRES,MC Glenn,Big Room,,,STAGE FOR FRIDAY COMPS IN THE FOYER,
+,,🏆,7:30 PM,,Allstar Jack & Jill (Prelims),ALLSK8,DJ RUBY ROX,MC Glenn,Big Room,,,,
+,,🏆,8:00 PM,,Novice Jack & Jill (Prelims - Floor 1),ALLSK8,DJ RUBY ROX,MC Glenn,Big Room,,,,
+,,🏆,,,Advanced Jack & Jill  (Prelims - Floor 2),ALLSK8,DJ RUBY ROX,MC Glenn,Side Room,,,,SPONSOR: LAURA MAILANDER
+,,🏆,8:30 PM,,Intermediate Jack & Jill   (Prelims - Floor 1),ALLSK8,DJ RUBY ROX,MC Glenn,Big Room,,,,SPONSOR: LAURA MAILANDER
+,,🏆,,,Newcomer Jack & Jill  (Prelims - Floor 2),ALLSK8,DJ RUBY ROX,MC Glenn,Side Room,,,,
+,,🦄,9:00 PM,,Open Dancing -> Stage for Comps,FUN,DJ RUBY ROX,,Big Room,,,,
+,,🏆,9:30 PM,,Open Switch Jack & Jill  (Prelims),ALLSK8,DJ LIZ,MC Tara,Big Room,,,SATURDAY NIGHT 1AM SWITCH FINALS WITH TARA TRAFZER!,
+,,🏆,,,Masters Jack & Jill  (Prelims),ALLSK8,DJ LIZ,MC Tara,Side Room,,,,
+,,🦄,10:00 PM,,Open Dancing,FUN,DJ BREE,MC K-OTTIC,Big Room,,,,
+,,🏆,10:30 PM,,Champs/Allstar SS (Prelims & Finals in the Pit!),ALLSK8->SPOT,DJs KOICHI & LIZ,MC K-OTTIC,Big Room,,,,
+,,🍄 ,12:00 PM,,Late Night Magic -- KICKOFF!,LATE NITE,DJ RUBY ROX,,Big Room,,,,
+,,🎼,,,Midnight Music Theory!,CLASS,CHRIS DUMOND,,Small Room,,,,
+,,🍄 ,2:30 AM,,Late Night Magic,LATE NITE,DJ BREE,DJ ANDRES,Big Room,,,,
+,,,5:00 AM,,YOU-nicorn Slumber Party aka Go to sleep : ),,,,,,,,
+,,SATURYAY,,,THE MAGIC,FORMAT,ARTISTS & LOCATIONS,,,,,THE SCOOP,
+,,🦄,9:00 AM,,BLISS: CACAO & INTENTION SETTING (PreRegister on the App),BLISS,TALETHA RIVAS,,Bliss Room,,,,
+,,🎓,10:00 AM,,WCS: MAGIC GROOVES (All Levels),WORKSHOP,CHRIS & ALEXIS,,Big Room,,,**SATURDAY CONTEST SIGN-UP DEADLINE = NOON,
+,,🎓,,,WCS: MAGIC SYNCOPATIONS (Intermediate),WORKSHOP,SAM B. & VICTORIA,,Side Room,,,,
+,,🎓,,,WCS: MAGIC RIDES (Advanced/Allstar),WORKSHOP,RYAN & LIZZY,,Small Room,,,,
+,,🎓,11:00 AM,,WCS: MAGIC TIMELESS MOVES (All Levels),WORKSHOP,KP & BRYN,,Big Room,,,,
+,,🎓,,,WCS: MAGIC MUSICALITY (Advanced),WORKSHOP,JESSE & ARIEL,,Side Room,,,,
+,,🎓,,,WCS: MAGIC TECHNIQUE (Allstar/Champs),WORKSHOP,THIBAULT & NICOLE,,Small Room,,,,
+,,🎓,12:00 PM,,WCS: MAGIC BODY MOVEMENT (All Levels),WORKSHOP,RYAN & LIZZY,,Big Room,,,,
+,,🎓,,,WCS: MAGIC FOOTWORK (Intermediate),WORKSHOP,TARA TRAFZER,,Side Room,,,,
+,,🎓,,,WCS: MAGIC COMMUNICATION (Advanced/Allstar),WORKSHOP,CHRIS & ALEXIS,,Small Room,,,,
+,,🦄,,,BLISS: MINDFUL MOVEMENT: LET IT GO / LET IT FLOW,BLISS,TBD,,Bliss Room,,,,
+,,🍬,1:00 PM,,Open Dancing & Stage for ProAm SS (Sign up with your teacher),,,,,,,,
+,,🏆,1:15 PM,,"ProAm Strictly - New/Nov, & Int (Top Pros $200 Prize!)",ALLSK8,DJ ANDRES,MC Tara,MC Tara,,,,SPONSORS: SCOTT & SUMA
+,,🏆,2:30 PM,,Jack & Jill Semi-Finals,ALLSK8,DJ ANDRES,MC Tara,MC Tara,,,,
+,,🍬,4:00 PM,,Open Dancing Stage for Finals,FUN,DJ ANDRES,MC Deon,Big Room,,,,
+,,🏆,4:20 PM,,Newcomer Jack & Jill  (Finals) ,ALLSK8,DJ RYAN M,MC Deon,Big Room,,,,
+,,🏆,4:40 PM,,Masters Jack & Jill (Finals),ALLSK8,DJ RYAN M,MC Deon,Big Room,,,,SPONSOR: TEST1
+,,🏆,5:00 PM,,Novice Jack & Jill  (Finals),ALLSK8,DJ BREE,MC Deon,Big Room,,,,
+,,🏆,5:20 PM,,Intermediate Jack & Jill  (Finals) ,ALLSK8,DJ BREE,MC Deon,Big Room,,,,STAFF DINNER SPONSORS: THERESA CONNOLLY
+,,🧙,6:00 PM,,Dinner Break! (Ballroom Closed for Floor Trials),DINNER BREAK,DJ KOICHI,,Big Room,,,"*6PM CHOOSE YOUR OWN ADVENTURE! DINNER BREAK, FLOOR TRIALS, POOL PARTY OR MASTERS MIXER!",STAFF DINNER SPONSORS: MICHAEL MCLAUGHLIN
+,,🛟,,,POOL PARTY,PARTY TIME!,DJ BREE,MC GLENN,Pool + Suite,,,,SPONSOR: ADDICTED TO SWING SHIRTS
+,,🎉,,,MASTERS ROOM PARTY,PARTY TIME!,THE CARTERS,,Suite TBD,,,,SWING CITY CHICAGO
+,,🎓,7:00 PM,,WCS: MAGIC DRILLS & CONCEPTS  (All Levels),WORKSHOP,THIBAULT & NICOLE,,Big Room,,,*7PM CHOOSE YOUR OWN ADVENTURE! DINNER BREAK OR WORKSHOPS!,
+,,🦄,,,WCS: MAGIC SOLO WCS MOVEMENT (All Levels),WORKSHOP,RACHEL SHOOK,,Small Room,,,,
+,,🍬,8:00 PM,,Open Dancing (ProAm Routine Call Time 8:15pm),FUN,DJ KOICHI,,Big Room,,,,
+,,🦄,8:30 PM,,THE SHOW 1ST ACT: PRO AM ROUTINES (New & Nov |  Int & Adv) ,SHOW,DJ KOICHI,MC Sheven,Big Room,,,The YOU-Nicorn Magic Show! Come in your YOU-Nicorn Attire! Sparkle Station Outside the Ballroom! Cheers on the Dancers!,SPONSOR: LAURA MAILANDER
+,,🦄,...,,THE SHOW 2ND ACT: RISING STAR ROUTINES,SHOW,DJ KOICHI,MC Sheven,Big Room,,,,SPONSOR: WILD WILD WESTIE
+,,🦄,...,,THE SHOW 3RD ACT: PRO SHOW & PRO ROUTINES,SHOW,DJ KOICHI,MC Sheven,Big Room,,,,SPONSOR: SD WESTIE!
+,,🍬,10:00 PM,,Open Dancing!,FUN,DJ RUBY ROX,,Big Room,,,,
+,,🏆,10:30 PM,,Champions J&J (Prelims & Finals),ALLSK8,DJ RUBY ROX,MC Sheven,Big Room,,,,
+,, 🍄 ,11:30 PM,,LATE NIGHT MAGIC (Floor 1),LATE NITE,DJ LIZ,DJ ARIEL,Big Room,,,,
+,, 🍄 ,1:00 AM,,SWITCH J&J LATE NIGHT FINALS! (Floor 2),FINALS,DJ BREE,MC Tara,Side Room,,,,
+,, 🍄 ,2:30 AM,,LATE NIGHT MAGIC,LATE NITE,DJ KOICHI,,Big Room,,,,
+,,,5:00 AM,,YOU-ncorn Slumber Party aka Go to sleep : ),,,,,,,,
+,, SUNYAY,,,THE MAGIC,FORMAT,ARTISTS & LOCATIONS,,,,,THE SCOOP,
+,,🎓,9:30 AM,,WCS: MAGIC MOVES  (All Levels),WORKSHOP,GLENN BALL,,Big Room,,,,
+,,🎓,10:30 AM,,MAGIC FOOTWORK (All Levels),WORKSHOP,KEERIGAN & MIA,,Big Room,,,**SUNDAY CONTEST SIGN-UP DEADLINE = 11AM!,
+,,🎓,,,MAGIC MOMENTS (Intermediate/Advanced),WORKSHOP,TBD,,Side Room,,,,
+,,🎓,,,SOLO: BASIC JAZZ ALL WESTIES SHOULD KNOW (All Levels),WORKSHOP,TARA TRAFZER,,Small Room,,,,
+,,🎓,11:30 AM,,WCS: MAGIC CONNECTION (All Levels),WORKSHOP,JESSE & ARIEL,,Big Room,,,,
+,,🎓,,,WCS: MAGIC GROOVES (Intermediate),WORKSHOP,DEON HARRELL,,Side Room,,,,
+,,🎓,,,WCS: MAGIC TEXTURE/STYLING (Advanced/Allstar),WORKSHOP,EMILY & SEBASTIAN,,Small Room,,,,
+,,🍬,12:30 PM,,Open Dancing -- Stage for Comp,FUN,DJ ANDRES,,,,,STAGE FOR SUNDAY COMPS ON FLOOR 2 AKA SIDE ROOM,
+,,🏆,12:45 PM,,"Stricly Swing - B (Prelims - Any Combo New, Nov and/or Int)",ALLSK8,DJ ANDRES,MC Glenn,Big Room,,,,
+,,🏆,1:15 PM,,Strictly Swing - A (Prelims - Any Combo Int and/or Adv),ALLSK8,DJ ANDRES,MC Glenn,Big Room,,,,
+,,🍬,1:45 PM,,Open Dancing -- Stage for Comp,FUN,DJ ANDRES,,Big Room,,,,
+,,🏆,2:00 PM,,ALL YOU-NICORN JJ  (New & Nov /Draw/ Int & Adv Prelims),ALLSK8,DJ RUBY ROX,MC Glenn,Big Room,,,"NEWCOMER & NOV DRAW INT & ADV, JUDGED AS A COUPLE IN PRELIMS. FINALISTS DRAW ALLSTARS AND CHAMPS!",SPONSOR: FLOORPLAY SWING VACATION!
+,,🏆,2:40 PM,,Stricly Swing - B (Finals),ALLSK8,DJ RUBY ROX,MC Glenn,Big Room,,,,
+,,🏆,3:00 PM,,Stricly Swing - A (Finals),StndSPOT,DJ RUBY ROX,MC Glenn,Big Room,,,,SPONSOR: WESTIE REMIX
+,,🍬,3:45 PM,,Open Dancing -- Stage for Comp,FUN,DJ RUBY ROX,MC Tara,Big Room,,,,
+,,🏆,4:00 PM,,ALL YOU-NICORN JJ  (Magical High-Lo Finals) ,ALLSK8,DJ KOICHI,MC Tara,Big Room,,,ALL AMERICAN MEETS HI-LO! DRAW A PRO IN FINALS!,
+,,🏆,4:20 PM,,Advanced J&J  (Finals) ,StndSPOT,DJ LIZ,MC Tara,Big Room,,,,
+,,🏆,5:00 PM,,Allstar J&J  (Finals) ,SPOT,DJ KOICHI,MC Tara,Big Room,,,,SPONSOR: THERESA CONNOLLY
+,,🥇,5:45 AM,,AWARDS,AWARDS,DJ KOICHI,MC Sheven,Big Room,,,,SPONSOR: ANTHONY ROBINSKY
+,,🍬,7:30 PM,,Dinner & Drinks in The Domain!,FUN,,,,,,*SUNDAY NIGHT WE'RE HITTING THE TOWN FOR A NIGHT IN AUSTIN! THEN BACK TO THE HOTEL FOR MEECH'N'YOU-NICORNS,
+,, 🍄 ,10:00 PM,,BACK TO THE HOTEL FOR -- Meech'n'You-Nicorns,LATE NITE,DJ Meechy + 🦄,YOU-Nicorns,Big Room,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,🦄 🎓 🍬 🍄 🏆 🥇 🪄🛟			,,,,🦄 🎓 🍬 🍄 🏆 🥇 🪄🛟			,,,,,,`;
   parseCSVAndBuildSchedule(fallbackCsv);
+  showLoading(false);
 }
 
 /* ==========================================================================
